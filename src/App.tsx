@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import AttendanceManagement from "./pages/AttendanceManagement";
+import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -30,6 +31,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AttendanceManagement />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/analytics" 
+                element={
+                  <ProtectedRoute>
+                    <Analytics />
                   </ProtectedRoute>
                 } 
               />
