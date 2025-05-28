@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { apiClient, LoginCredentials } from '@/services/api';
 
 interface Teacher {
   id: string;
@@ -35,25 +36,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (username: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call to your FastAPI backend
-      // const response = await fetch('/api/auth/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ username, password })
-      // });
+      const credentials: LoginCredentials = { username, password };
+      const response = await apiClient.login(credentials);
       
-      // Mock authentication for demo
-      if (username === 'teacher' && password === 'password123') {
-        const mockTeacher: Teacher = {
-          id: '1',
-          username: 'teacher',
-          name: 'Ms. Johnson'
-        };
-        setTeacher(mockTeacher);
-        localStorage.setItem('teacher', JSON.stringify(mockTeacher));
-        return true;
-      }
-      return false;
+      // Store teacher info
+      const teacherData: Teacher = {
+        id: response.teacher?.id || '1',
+        username: response.teacher?.username || username,
+        name: response.teacher?.name || username
+      };
+      
+      setTeacher(teacherData);
+      localStorage.setItem('teacher', JSON.stringify(teacherData));
+      return true;
     } catch (error) {
       console.error('Login error:', error);
       return false;
@@ -64,14 +59,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = () => {
     setTeacher(null);
+    apiClient.clearToken();
     localStorage.removeItem('teacher');
   };
 
   // Check for stored auth on mount
   React.useEffect(() => {
     const storedTeacher = localStorage.getItem('teacher');
-    if (storedTeacher) {
+    const storedToken = localStorage.getItem('access_token');
+    
+    if (storedTeacher && storedToken) {
       setTeacher(JSON.parse(storedTeacher));
+      apiClient.setToken(storedToken);
     }
   }, []);
 
