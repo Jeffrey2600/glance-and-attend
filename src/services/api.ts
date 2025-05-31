@@ -1,4 +1,3 @@
-
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export interface AttendanceRecord {
@@ -45,13 +44,18 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
+    console.log('Making request to:', url);
+    
     const response = await fetch(url, {
       ...options,
       headers,
+      mode: 'cors', // Explicitly set CORS mode
     });
 
     if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     return response.json();
@@ -69,22 +73,34 @@ class ApiClient {
 
   // Authentication
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
+    console.log('Attempting login to:', `${this.baseURL}/token`);
+    
     const formData = new FormData();
     formData.append('username', credentials.username);
     formData.append('password', credentials.password);
 
-    const response = await fetch(`${this.baseURL}/token`, {
-      method: 'POST',
-      body: formData,
-    });
+    try {
+      const response = await fetch(`${this.baseURL}/token`, {
+        method: 'POST',
+        body: formData,
+        mode: 'cors', // Explicitly set CORS mode
+      });
 
-    if (!response.ok) {
-      throw new Error('Invalid credentials');
+      console.log('Login response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Login error response:', errorText);
+        throw new Error('Invalid credentials');
+      }
+
+      const data = await response.json();
+      this.setToken(data.access_token);
+      return data;
+    } catch (error) {
+      console.error('Login fetch error:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    this.setToken(data.access_token);
-    return data;
   }
 
   // Attendance endpoints
