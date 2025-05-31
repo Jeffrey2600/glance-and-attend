@@ -27,23 +27,38 @@ const Login = () => {
     e.preventDefault();
     setError('');
     
+    console.log('Login form submitted with:', { username, password: '***' });
+    
     if (!username || !password) {
       setError('Please enter both username and password');
       return;
     }
 
-    const success = await login(username, password);
-    if (success) {
+    try {
+      const success = await login(username, password);
+      console.log('Login result:', success);
+      
+      if (success) {
+        toast({
+          title: "Login successful",
+          description: "Welcome back! Redirecting to attendance management...",
+        });
+        navigate('/attendance-management');
+      } else {
+        setError('Invalid username or password');
+        toast({
+          title: "Login failed",
+          description: "Please check your credentials and try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Login error in component:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
+      setError(errorMessage);
       toast({
-        title: "Login successful",
-        description: "Welcome back! Redirecting to attendance management...",
-      });
-      navigate('/attendance-management');
-    } else {
-      setError('Invalid username or password');
-      toast({
-        title: "Login failed",
-        description: "Please check your credentials and try again.",
+        title: "Login error",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -121,6 +136,12 @@ const Login = () => {
                 )}
               </Button>
             </form>
+
+            {/* Debug Info - Remove in production */}
+            <div className="mt-4 p-3 bg-gray-100 rounded text-xs text-gray-600">
+              <p>API URL: {import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}</p>
+              <p>Mode: {import.meta.env.MODE}</p>
+            </div>
 
             {/* Demo Credentials */}
             <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">

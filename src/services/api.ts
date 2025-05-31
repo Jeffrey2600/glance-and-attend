@@ -1,3 +1,4 @@
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export interface AttendanceRecord {
@@ -83,7 +84,8 @@ class ApiClient {
       const response = await fetch(`${this.baseURL}/token`, {
         method: 'POST',
         body: formData,
-        mode: 'cors', // Explicitly set CORS mode
+        mode: 'cors',
+        credentials: 'include', // Include credentials for CORS
       });
 
       console.log('Login response status:', response.status);
@@ -91,7 +93,14 @@ class ApiClient {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Login error response:', errorText);
-        throw new Error('Invalid credentials');
+        
+        if (response.status === 422) {
+          throw new Error('Invalid username or password format');
+        } else if (response.status === 401) {
+          throw new Error('Invalid credentials');
+        } else {
+          throw new Error(`Server error: ${response.status}`);
+        }
       }
 
       const data = await response.json();
@@ -99,6 +108,11 @@ class ApiClient {
       return data;
     } catch (error) {
       console.error('Login fetch error:', error);
+      
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Cannot connect to server. Please check if the backend is running on ' + this.baseURL);
+      }
+      
       throw error;
     }
   }
